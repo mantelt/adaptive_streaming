@@ -89,39 +89,28 @@ void RTSPStreamServer::get_v4l2_devices_info()
             memset(&frmsize, 0, sizeof(frmsize));
             memset(&frmival, 0, sizeof(frmival));
 
-            int mjpg_index = -1;
-            int h264_index = -1;
-
             fmt.index = 0;
             fmt.type = type;
 
             while (ioctl(fd, VIDIOC_ENUM_FMT, &fmt) >= 0) {
-                if (!strcmp((char*)fmt.description, "Motion-JPEG")) {
-                    mjpg_index = fmt.index;
+                if (fmt.pixelformat == V4L2_PIX_FMT_MJPEG) {
+                	info.camera_type = RAW_CAM;
+                    break;
                 }
-                if (!strcmp((char*)fmt.description, "H264") || !strcmp((char*)fmt.description, "H.264")) {
-                    h264_index = fmt.index;
+                if (fmt.pixelformat == V4L2_PIX_FMT_H264 || fmt.pixelformat == V4L2_PIX_FMT_H264_MVC) {
+                    if (check_h264_ioctls(fd)) {
+                        info.camera_type = H264_CAM;
+                    } else {
+                        info.camera_type = UVC_CAM;
+                    }
+                    break;
                 }
                 fmt.index++;
             }
 
-            if (mjpg_index != -1) {
-                fmt.index = mjpg_index;
-            }
-
-            if (h264_index != -1) {
-                fmt.index = h264_index;
-                if (check_h264_ioctls(fd)) {
-                    info.camera_type = H264_CAM;
-                } else {
-                    info.camera_type = UVC_CAM;
-                }
-            } else {
-                info.camera_type = RAW_CAM;
-            }
-
             frmsize.pixel_format = fmt.pixelformat;
 
+            cout << "capabilites: " << endl;
             for (frmsize.index = 0; ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) >= 0; frmsize.index++) {
                 if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE) {
                     FramePresets preset;
@@ -131,45 +120,61 @@ void RTSPStreamServer::get_v4l2_devices_info()
                         preset = FRAME_640x480;
                     } else if (frmsize.discrete.width == 1280 && frmsize.discrete.height == 720) {
                         preset = FRAME_1280x720;
+                    } else if (frmsize.discrete.width == 1920 && frmsize.discrete.height == 1080) {
+                        preset = FRAME_1920x1080;
                     } else {
                         continue;
                     }
+                	cout << " " << frmsize.discrete.width << "x" << frmsize.discrete.height << " @ ";
 
-                    frmival.pixel_format = fmt.pixelformat;
+                    frmival.pixel_format = frmsize.pixel_format;
                     frmival.width = frmsize.discrete.width;
                     frmival.height = frmsize.discrete.height;
 
                     for (frmival.index = 0; ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmival) >= 0; frmival.index++) {
                         int framerate  = frmival.discrete.denominator;
+                        if (frmival.index > 0) {
+                        	cout << ", ";
+                        }
+                        cout << framerate;
                         // For simplicity in maintenance, we only support 240p, 480p
                         // and 720p. If a camera supports a resolution we use a bitmask
                         // for saving its capabilities as it greatly simplifies our IPC
                         switch (preset) {
                         case FRAME_320x240:
-                            if (framerate == 15) {
-                                info.frame_property_bitmask |= (1 << VIDEO_320x240x15);
+                            if (framerate == 10) {
+                                info.frame_property_bitmask |= (1 << VIDEO_320x240x10);
+                            } else if (framerate == 20) {
+                                info.frame_property_bitmask |= (1 << VIDEO_320x240x20);
                             } else if (framerate == 30) {
                                 info.frame_property_bitmask |= (1 << VIDEO_320x240x30);
-                            } else if (framerate == 60) {
-                                info.frame_property_bitmask |= (1 << VIDEO_320x240x60);
                             }
                             break;
                         case FRAME_640x480:
-                            if (framerate == 15) {
-                                info.frame_property_bitmask |= (1 << VIDEO_640x480x15);
+                            if (framerate == 10) {
+                                info.frame_property_bitmask |= (1 << VIDEO_640x480x10);
+                            } else if (framerate == 20) {
+                                info.frame_property_bitmask |= (1 << VIDEO_640x480x20);
                             } else if (framerate == 30) {
                                 info.frame_property_bitmask |= (1 << VIDEO_640x480x30);
-                            } else if (framerate == 60) {
-                                info.frame_property_bitmask |= (1 << VIDEO_640x480x60);
                             }
                             break;
                         case FRAME_1280x720:
-                            if (framerate == 15) {
-                                info.frame_property_bitmask |= (1 << VIDEO_1280x720x15);
+                            if (framerate == 10) {
+                                info.frame_property_bitmask |= (1 << VIDEO_1280x720x10);
+                            } else if (framerate == 20) {
+                                info.frame_property_bitmask |= (1 << VIDEO_1280x720x20);
                             } else if (framerate == 30) {
                                 info.frame_property_bitmask |= (1 << VIDEO_1280x720x30);
-                            } else if (framerate == 60) {
-                                info.frame_property_bitmask |= (1 << VIDEO_1280x720x60);
+                            }
+                            break;
+                        case FRAME_1920x1080:
+                            if (framerate == 10) {
+                                info.frame_property_bitmask |= (1 << VIDEO_1920x1080x10);
+                            } else if (framerate == 20) {
+                                info.frame_property_bitmask |= (1 << VIDEO_1920x1080x20);
+                            } else if (framerate == 30) {
+                                info.frame_property_bitmask |= (1 << VIDEO_1920x1080x30);
                             }
                             break;
                         default:
@@ -181,19 +186,25 @@ void RTSPStreamServer::get_v4l2_devices_info()
                     // to guess its capabilities
                 } else if (frmsize.type == V4L2_FRMSIZE_TYPE_STEPWISE) {
                     // How do I get the framerates for stepwise cams?
-                    info.frame_property_bitmask |= (1 << VIDEO_320x240x15);
+                    info.frame_property_bitmask |= (1 << VIDEO_320x240x10);
+                    info.frame_property_bitmask |= (1 << VIDEO_320x240x20);
                     info.frame_property_bitmask |= (1 << VIDEO_320x240x30);
-                    info.frame_property_bitmask |= (1 << VIDEO_320x240x60);
 
-                    info.frame_property_bitmask |= (1 << VIDEO_640x480x15);
+                    info.frame_property_bitmask |= (1 << VIDEO_640x480x10);
+                    info.frame_property_bitmask |= (1 << VIDEO_640x480x20);
                     info.frame_property_bitmask |= (1 << VIDEO_640x480x30);
-                    info.frame_property_bitmask |= (1 << VIDEO_640x480x60);
 
-                    info.frame_property_bitmask |= (1 << VIDEO_1280x720x15);
+                    info.frame_property_bitmask |= (1 << VIDEO_1280x720x10);
+                    info.frame_property_bitmask |= (1 << VIDEO_1280x720x20);
                     info.frame_property_bitmask |= (1 << VIDEO_1280x720x30);
-                    info.frame_property_bitmask |= (1 << VIDEO_1280x720x60);
+
+                    info.frame_property_bitmask |= (1 << VIDEO_1920x1080x10);
+                    info.frame_property_bitmask |= (1 << VIDEO_1920x1080x20);
+                    info.frame_property_bitmask |= (1 << VIDEO_1920x1080x30);
                     break;
                 }
+
+                cout << " fps" << endl;
             }
 
             device_properties_map.insert(pair<string, v4l2_info>(dev, info));

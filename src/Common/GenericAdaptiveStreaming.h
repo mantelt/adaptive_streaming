@@ -36,8 +36,8 @@ private:
 
     string video_caps_string;
 
-    string video_presets[3];
-    guint32 bitrate_presets[3];
+    string video_presets[4];
+    guint32 bitrate_presets[4];
 
     void set_encoding_bitrate(guint32 bitrate);
     void set_state_constants();

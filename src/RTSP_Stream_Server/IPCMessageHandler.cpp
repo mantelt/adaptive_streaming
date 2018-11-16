@@ -49,6 +49,7 @@ string IPCMessageHandler::serialise_device_props(pair<string, v4l2_info> device_
             "\"frame_property_bitmask\": %llu, "
 #endif
             "\"current_quality\": %u, "
+    		"\"current resolution\": %u, "
             "\"recording\": %d"
             "}",
             ip_address.c_str(),
@@ -59,6 +60,7 @@ string IPCMessageHandler::serialise_device_props(pair<string, v4l2_info> device_
             device_props.second.camera_type,
             device_props.second.frame_property_bitmask,
             stream->current_quality,
+			stream->current_res,
             stream->file_recorder.get_recording());
     return string(info_buffer);
 }

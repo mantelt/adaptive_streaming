@@ -13,15 +13,18 @@ GenericAdaptiveStreaming::GenericAdaptiveStreaming(string _device, CameraType ty
     device(_device), camera_type(type)
 {
     if (camera_type == CameraType::RAW_CAM) {
-        video_presets[ResolutionPresets::LOW] = RAW_CAPS_FILTERS[VIDEO_320x240x30];
-        video_presets[ResolutionPresets::MED] = RAW_CAPS_FILTERS[VIDEO_640x480x30];
-        video_presets[ResolutionPresets::HIGH] = RAW_CAPS_FILTERS[VIDEO_1280x720x30];
+        video_presets[ResolutionPresets::VERYLOW] = RAW_CAPS_FILTERS[VIDEO_320x240x30];
+        video_presets[ResolutionPresets::LOW] = RAW_CAPS_FILTERS[VIDEO_640x480x30];
+        video_presets[ResolutionPresets::MED] = RAW_CAPS_FILTERS[VIDEO_1280x720x30];
+        video_presets[ResolutionPresets::HIGH] = RAW_CAPS_FILTERS[VIDEO_1920x1080x30];
     } else if (camera_type == CameraType::H264_CAM || camera_type == CameraType::UVC_CAM) {
-        video_presets[ResolutionPresets::LOW] = H264_CAPS_FILTERS[VIDEO_320x240x30];
-        video_presets[ResolutionPresets::MED] = H264_CAPS_FILTERS[VIDEO_640x480x30];
-        video_presets[ResolutionPresets::HIGH] = H264_CAPS_FILTERS[VIDEO_1280x720x30];
+        video_presets[ResolutionPresets::VERYLOW] = H264_CAPS_FILTERS[VIDEO_320x240x30];
+        video_presets[ResolutionPresets::LOW] = H264_CAPS_FILTERS[VIDEO_640x480x30];
+        video_presets[ResolutionPresets::MED] = H264_CAPS_FILTERS[VIDEO_1280x720x30];
+        video_presets[ResolutionPresets::HIGH] = H264_CAPS_FILTERS[VIDEO_1920x1080x30];
     }
 
+    bitrate_presets[ResolutionPresets::VERYLOW] = VERY_LOW_QUAL_BITRATE;
     bitrate_presets[ResolutionPresets::LOW] = LOW_QUAL_BITRATE;
     bitrate_presets[ResolutionPresets::MED] = MED_QUAL_BITRATE;
     bitrate_presets[ResolutionPresets::HIGH] = HIGH_QUAL_BITRATE;
@@ -202,11 +205,13 @@ void GenericAdaptiveStreaming::change_quality_preset(int quality)
 
         // Set the bitrate to the presets we use in AUTO mode
 
-        if (quality == VIDEO_320x240x15 || quality == VIDEO_320x240x30 || quality == VIDEO_320x240x60) {
+        if (quality == VIDEO_320x240x10 || quality == VIDEO_320x240x20 || quality == VIDEO_320x240x30) {
+            h264_bitrate = VERY_LOW_QUAL_BITRATE;
+        } else if (quality == VIDEO_640x480x10 || quality == VIDEO_640x480x20 || quality == VIDEO_640x480x30) {
             h264_bitrate = LOW_QUAL_BITRATE;
-        } else if (quality == VIDEO_640x480x15 || quality == VIDEO_640x480x30 || quality == VIDEO_640x480x60) {
+        } else if (quality == VIDEO_1280x720x10 || quality == VIDEO_1280x720x20 || quality == VIDEO_1280x720x30) {
             h264_bitrate = MED_QUAL_BITRATE;
-        } else if (quality == VIDEO_1280x720x15 || quality == VIDEO_1280x720x30 || quality ==VIDEO_1280x720x60) {
+        } else if (quality == VIDEO_1920x1080x10 || quality == VIDEO_1920x1080x20 || quality == VIDEO_1920x1080x30) {
             h264_bitrate = HIGH_QUAL_BITRATE;
         }
 
