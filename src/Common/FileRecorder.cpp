@@ -27,15 +27,12 @@ bool FileRecorder::init_file_recorder(GstElement* _pipeline, GstElement* _tee)
     mux = gst_element_factory_make("matroskamux", NULL);
     file_sink = gst_element_factory_make("filesink", NULL);
 
-    string file_path;
     auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
-    std::stringstream ss;
-    ss << put_time(&tm, "%d-%m-%Y_%H:%M:%S") << endl;
-    file_path =  ss.str();
-    file_path = "Video_" + file_path + ".mkv";
+    char file_path [40];
+    std::strftime(file_path, sizeof(file_path),"%Y%m%d_%H%M%S_recording.mkv",&tm);
 
-    g_object_set(G_OBJECT(file_sink), "location", file_path.c_str(), NULL);
+    g_object_set(G_OBJECT(file_sink), "location", file_path, NULL);
     gst_bin_add_many(GST_BIN(pipeline), file_queue, file_h264_parser, mux, file_sink, NULL);
     gst_element_link_many(file_queue, file_h264_parser, mux, file_sink, NULL);
 
