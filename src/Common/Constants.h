@@ -9,7 +9,7 @@
 // Raspberry Pi are far more limited.
 
 #ifdef __amd64__
-static const guint32 MAX_STEADY_BITRATE = 6000;
+static const guint32 MAX_STEADY_BITRATE = 4000;
 static const bool AMD64 = true;
 static const bool ARM = false;
 #endif
@@ -31,10 +31,10 @@ static const guint32 MIN_CONGESTION_BITRATE = 100;
 static const guint32 INC_CONGESTION_BITRATE = 250;
 static const guint32 DEC_CONGESTION_BITRATE = 500;
 
-static const guint32 VERY_LOW_QUAL_BITRATE = 500;
-static const guint32 LOW_QUAL_BITRATE = 1000;
-static const guint32 MED_QUAL_BITRATE = 3000;
-static const guint32 HIGH_QUAL_BITRATE = 6000;
+static const guint32 VERY_LOW_QUAL_BITRATE = 300;
+static const guint32 LOW_QUAL_BITRATE = 500;
+static const guint32 MED_QUAL_BITRATE = 1000;
+static const guint32 HIGH_QUAL_BITRATE = 2500;
 
 static const guint32 IPC_BUFFER_SIZE = 10000;
 

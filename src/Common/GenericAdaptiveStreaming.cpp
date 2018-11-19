@@ -106,11 +106,14 @@ void GenericAdaptiveStreaming::adapt_stream()
 void GenericAdaptiveStreaming::improve_quality()
 {
     set_encoding_bitrate(h264_bitrate + INC_BITRATE);
-    if (current_res == ResolutionPresets::LOW &&
-        h264_bitrate > bitrate_presets[ResolutionPresets::MED]) {
+    if (current_res == ResolutionPresets::VERYLOW &&
+    		h264_bitrate > bitrate_presets[ResolutionPresets::LOW]) {
+        set_resolution(ResolutionPresets::LOW);
+    } else if (current_res == ResolutionPresets::LOW &&
+    		h264_bitrate > bitrate_presets[ResolutionPresets::MED]) {
         set_resolution(ResolutionPresets::MED);
     } else if (current_res == ResolutionPresets::MED &&
-               h264_bitrate > bitrate_presets[ResolutionPresets::HIGH]) {
+    		h264_bitrate > bitrate_presets[ResolutionPresets::HIGH]) {
         set_resolution(ResolutionPresets::HIGH);
     }
 }
@@ -119,11 +122,14 @@ void GenericAdaptiveStreaming::degrade_quality()
 {
     set_encoding_bitrate(h264_bitrate - DEC_BITRATE);
     if (current_res == ResolutionPresets::HIGH &&
-        h264_bitrate < bitrate_presets[ResolutionPresets::MED]) {
+    		h264_bitrate < bitrate_presets[ResolutionPresets::MED]) {
         set_resolution(ResolutionPresets::MED);
     } else if (current_res == ResolutionPresets::MED &&
-               h264_bitrate < bitrate_presets[ResolutionPresets::LOW]) {
+    		h264_bitrate < bitrate_presets[ResolutionPresets::LOW]) {
         set_resolution(ResolutionPresets::LOW);
+    } else if (current_res == ResolutionPresets::LOW &&
+    		h264_bitrate < bitrate_presets[ResolutionPresets::VERYLOW]) {
+        set_resolution(ResolutionPresets::VERYLOW);
     }
 }
 
