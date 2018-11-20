@@ -41,14 +41,7 @@ string IPCMessageHandler::serialise_device_props(pair<string, v4l2_info> device_
             "\"dev_mount\": \"%s\", "
             "\"name\": \"%s\", "
             "\"mount\": \"%s\", "
-            "\"camtype\": %d, "
-#ifdef __amd64__
-            "\"frame_property_bitmask\": %lu, "
-#endif
-#ifdef __arm__
-            "\"frame_property_bitmask\": %llu, "
-#endif
-            "\"current_quality\": %u, "
+    		"\"current_quality\": %u, "
             "\"recording\": %d"
             "}",
             ip_address.c_str(),
@@ -56,8 +49,6 @@ string IPCMessageHandler::serialise_device_props(pair<string, v4l2_info> device_
             device_props.first.c_str(),
             device_props.second.camera_name.c_str(),
             device_props.second.mount_point.c_str(),
-            device_props.second.camera_type,
-            device_props.second.frame_property_bitmask,
             stream->current_quality,
             stream->file_recorder.get_recording());
     return string(info_buffer);

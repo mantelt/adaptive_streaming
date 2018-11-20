@@ -40,32 +40,6 @@ static const guint32 IPC_BUFFER_SIZE = 10000;
 static const guint32 I_FRAME_INTERVAL = 10;
 static const guint32 SUCCESSFUL_TRANSMISSION = 5;
 
-static const vector<string> RAW_CAPS_FILTERS = {
-    "image/jpeg, width=(int)320, height=(int)240, framerate=(fraction)15/1",
-    "image/jpeg, width=(int)640, height=(int)480, framerate=(fraction)15/1",
-    "image/jpeg, width=(int)1280, height=(int)720, framerate=(fraction)15/1",
-    "image/jpeg, width=(int)320, height=(int)240, framerate=(fraction)30/1",
-    "image/jpeg, width=(int)640, height=(int)480, framerate=(fraction)30/1",
-    "image/jpeg, width=(int)1280, height=(int)720, framerate=(fraction)30/1",
-    "image/jpeg, width=(int)320, height=(int)240, framerate=(fraction)60/1",
-    "image/jpeg, width=(int)640, height=(int)480, framerate=(fraction)60/1",
-    "image/jpeg, width=(int)1280, height=(int)720, framerate=(fraction)60/1"
-};
-
-static const vector<string> H264_CAPS_FILTERS = {
-    "video/x-h264, width=(int)320, height=(int)240, framerate=(fraction)15/1",
-    "video/x-h264, width=(int)640, height=(int)480, framerate=(fraction)15/1",
-    "video/x-h264, width=(int)1280, height=(int)720, framerate=(fraction)15/1",
-
-    "video/x-h264, width=(int)320, height=(int)240, framerate=(fraction)30/1",
-    "video/x-h264, width=(int)640, height=(int)480, framerate=(fraction)30/1",
-    "video/x-h264, width=(int)1280, height=(int)720, framerate=(fraction)30/1",
-
-    "video/x-h264, width=(int)320, height=(int)240, framerate=(fraction)60/1",
-    "video/x-h264, width=(int)640, height=(int)480, framerate=(fraction)60/1",
-    "video/x-h264, width=(int)1280, height=(int)720, framerate=(fraction)60/1"
-};
-
 static const int AUTO_PRESET = 1024;
 static const string SOCKET_PATH = "/tmp/rtsp_server.sock";
 

@@ -6,11 +6,10 @@
 #include "RTSPAdaptiveStreaming.h"
 
 RTSPAdaptiveStreaming::RTSPAdaptiveStreaming(string _device,
-        CameraType type,
         string _uri,
         GstRTSPServer* server,
         int quality):
-    GenericAdaptiveStreaming(_device, type),
+    GenericAdaptiveStreaming(_device),
     uri(_uri),
     rtsp_server((GstRTSPServer*)gst_object_ref(server)),
     media_prepared(false)
@@ -35,39 +34,16 @@ void RTSPAdaptiveStreaming::init_media_factory()
 
     string launch_string;
 
-    // Set launch string according to the type of camera
-    switch (camera_type) {
-    case RAW_CAM:
-        launch_string = "v4l2src name=src device=" + device +
-                        " ! capsfilter name=capsfilter caps=image/jpeg,width=320,height=240,framerate=30/1"
-                        " ! jpegdec"
-                        " ! videoconvert"
-                        " ! textoverlay name=textoverlay"
-                        " ! x264enc name=x264enc tune=zerolatency threads=4 bitrate=500"
+    launch_string = "v4l2src device=" + device + " name=src"
+                        " ! queue"
+//                        " ! capsfilter name=capsfilter caps=video/x-h264,width=1920,height=1080,framerate=30/1"
                         " ! tee name=tee_element tee_element."
                         " ! queue"
                         " ! h264parse"
                         " ! rtph264pay name=pay0";
-        break;
-    case UVC_CAM:
-        launch_string = "uvch264src device=" + device +
-                        " name=src auto-start=true src.vidsrc"
-                        " ! queue"
-                        " ! capsfilter name=capsfilter caps=video/x-h264,width=1280,height=720,framerate=30/1"
-                        " ! tee name=tee_element tee_element."
-                        " ! queue"
-                        " ! h264parse"
-                        " ! rtph264pay name=pay0";
-        break;
-    case H264_CAM:
-        launch_string = "v4l2src name=src device=" + device +
-                        " ! queue"
-                        " ! capsfilter name=capsfilter caps=video/x-h264,width=320,height=240,framerate=30/1"
-                        " ! queue"
-                        " ! h264parse"
-                        " ! rtph264pay name=pay0";
-        break;
-    };
+
+    std::cout << launch_string << std::endl;
+
     gst_rtsp_media_factory_set_launch(media_factory, launch_string.c_str());
 
     gst_rtsp_mount_points_add_factory(mounts, uri.c_str(), media_factory);
@@ -121,7 +97,7 @@ void RTSPAdaptiveStreaming::media_prepared_callback(GstRTSPMedia* media)
         cerr << "Some GStreamer elements not referenced" << endl;
     }
 
-    set_resolution(ResolutionPresets::LOW);
+    change_quality_preset(AUTO_PRESET);
     add_rtpbin_probes();
     media_prepared = true;
 }
@@ -262,58 +238,11 @@ bool RTSPAdaptiveStreaming::get_element_references()
         v4l2_src = gst_bin_get_by_name(GST_BIN(pipeline), "src");
         src_capsfilter = gst_bin_get_by_name(GST_BIN(pipeline), "capsfilter");
 
-        switch (camera_type) {
-        case RAW_CAM:
-            h264_encoder = gst_bin_get_by_name(GST_BIN(pipeline), "x264enc");
-            text_overlay = gst_bin_get_by_name(GST_BIN(pipeline), "textoverlay");
-            if (tee && rtph264_payloader && v4l2_src && src_capsfilter && h264_encoder && text_overlay) {
-                g_object_set(G_OBJECT(text_overlay),
-                             "valignment", 2,
-                             "halignment", 0,
-                             "font-desc", "Sans, 8", NULL);
-                g_object_set(G_OBJECT(h264_encoder),
-                             "tune", 0x00000004,
-                             "threads", 4,
-                             "key-int-max", I_FRAME_INTERVAL,
-                             // intra-refresh breaks an iframe over multiple frames
-                             "intra-refresh", TRUE,
-                             NULL);
-                return true;
-            } else {
-                return false;
-            }
-        case H264_CAM:
-            int v4l2_cam_fd;
-            if (v4l2_src) {
-                g_object_get(v4l2_src, "device-fd", &v4l2_cam_fd, NULL);
-                if (v4l2_cam_fd > 0) {
-                    v4l2_control veritcal_flip;
-                    veritcal_flip.id = V4L2_CID_VFLIP;
-                    veritcal_flip.value = TRUE;
-
-                    v4l2_control horizontal_flip;
-                    horizontal_flip.id = V4L2_CID_HFLIP;
-                    horizontal_flip.value = TRUE;
-
-                    v4l2_control i_frame_interval;
-                    i_frame_interval.id = V4L2_CID_MPEG_VIDEO_H264_I_PERIOD;
-                    i_frame_interval.value = I_FRAME_INTERVAL;
-
-                    if (ioctl(v4l2_cam_fd, VIDIOC_S_CTRL, &veritcal_flip) == -1 ||
-                        ioctl(v4l2_cam_fd, VIDIOC_S_CTRL, &horizontal_flip) == -1 ||
-                        ioctl(v4l2_cam_fd, VIDIOC_S_CTRL, &i_frame_interval) == -1) {
-                        return false;
-                    }
-                    return true;
-                }
-            }
-        case UVC_CAM:
-            if (tee && rtph264_payloader && v4l2_src && src_capsfilter) {
-                return true;
-            } else {
-                return false;
-            }
-        };
+		if (tee && rtph264_payloader && v4l2_src && src_capsfilter) {
+			return true;
+		} else {
+			return false;
+		}
     }
     return false;
 }
@@ -358,21 +287,6 @@ void RTSPAdaptiveStreaming::record_stream(bool _record_stream)
 // to avoid any serious concurrency issues which can otherwise occur
 void RTSPAdaptiveStreaming::set_device_properties(int quality, bool _record_stream)
 {
-    // We can't have the capsfilter changing when recording from the CC, so we disable it for AUTO mode
-    if (camera_type != H264_CAM) {
-        if (quality == AUTO_PRESET && camera_type != UVC_CAM) {
-            record_stream(false);
-            change_quality_preset(quality);
-            return;
-        }
-        if (quality == current_quality) {
-            record_stream(_record_stream);
-        } else {
-            record_stream(false);
-            change_quality_preset(quality);
-        }
-    } else {
-        record_stream(false);
-        change_quality_preset(quality);
-    }
+	record_stream(_record_stream);
+	change_quality_preset(quality);
 }

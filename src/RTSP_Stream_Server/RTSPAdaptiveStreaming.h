@@ -70,7 +70,6 @@ private:
 
 public:
     RTSPAdaptiveStreaming(string _device = "/dev/video0",
-                          CameraType type = CameraType::RAW_CAM,
                           string _uri = "/test", GstRTSPServer* server = nullptr,
                           int quality = AUTO_PRESET);
     ~RTSPAdaptiveStreaming() override;

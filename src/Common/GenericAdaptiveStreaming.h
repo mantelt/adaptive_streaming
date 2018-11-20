@@ -11,11 +11,12 @@
 #include <sstream>
 #include <iomanip>
 #include <ctime>
-
+#include <cstdint>
 #include "QoSEstimator.h"
 #include "DeviceDatatypes.h"
 #include "Constants.h"
 #include "FileRecorder.h"
+#include "USBFHD06H.h"
 
 using namespace std;
 
@@ -26,20 +27,19 @@ using namespace std;
 class GenericAdaptiveStreaming
 {
 private:
-    guint32 MIN_BITRATE;
-    guint32 MAX_BITRATE;
-    guint32 DEC_BITRATE;
-    guint32 INC_BITRATE;
+	uint32_t MIN_BITRATE;
+	uint32_t MAX_BITRATE;
+	uint32_t DEC_BITRATE;
+    uint32_t INC_BITRATE;
 
     enum NetworkState {STEADY, CONGESTION} network_state;
-    guint32 successive_transmissions;
+    uint32_t successive_transmissions;
 
-    string video_caps_string;
+    USBFHD06H device_ctrl;
 
-    string video_presets[3];
-    guint32 bitrate_presets[3];
+    uint32_t bitrate_presets[NUM_QUALITY_PRESETS];
 
-    void set_encoding_bitrate(guint32 bitrate);
+    void set_encoding_bitrate(uint32_t bitrate);
     void set_state_constants();
 
     void improve_quality();
@@ -47,32 +47,29 @@ private:
 
 public:
     string device;
-    const CameraType camera_type;
 
     int current_quality;
-    ResolutionPresets current_res;
-    guint32 h264_bitrate;
+    QualityPresets current_res;
+    uint32_t h264_bitrate;
     FileRecorder file_recorder;
 
     GstElement* pipeline;
     GstElement* v4l2_src;
     GstElement* src_capsfilter;
     GstElement* videoconvert;
-    GstElement* h264_encoder;
+//    GstElement* h264_encoder;
     GstElement* h264_parser;
     GstElement* rtph264_payloader;
-    GstElement* text_overlay;
     GstElement* tee;
     GstElement* multi_udp_sink;
 
     QoSEstimator qos_estimator;
 
-    GenericAdaptiveStreaming(string _device = "/dev/video0", CameraType type = CameraType::RAW_CAM);
+    GenericAdaptiveStreaming(string _device = "/dev/video0");
 
     virtual ~GenericAdaptiveStreaming();
     void change_quality_preset(int quality);
     bool record_stream(bool _record_stream);
-    void set_resolution(ResolutionPresets setting);
     void adapt_stream();
 };
 
