@@ -36,7 +36,7 @@ void RTSPAdaptiveStreaming::init_media_factory()
 
     launch_string = "v4l2src device=" + device + " name=src"
                         " ! queue"
-//                        " ! capsfilter name=capsfilter caps=video/x-h264,width=1920,height=1080,framerate=30/1"
+                        " ! capsfilter name=capsfilter caps=video/x-h264,width=1280,height=720,framerate=30/1"
                         " ! tee name=tee_element tee_element."
                         " ! queue"
                         " ! h264parse"

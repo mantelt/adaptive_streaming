@@ -105,6 +105,7 @@ void GenericAdaptiveStreaming::degrade_quality()
 void GenericAdaptiveStreaming::set_encoding_bitrate(uint32_t bitrate)
 {
     string currstate = (network_state == NetworkState::STEADY) ? "STEADY" : "CONGESTED";
+    uint32_t cur_bitrate = h264_bitrate;
 
     if (bitrate >= MIN_BITRATE && bitrate <= MAX_BITRATE) {
         h264_bitrate = bitrate;
@@ -114,9 +115,11 @@ void GenericAdaptiveStreaming::set_encoding_bitrate(uint32_t bitrate)
         h264_bitrate = MIN_BITRATE;
     }
 
-    std::cout << "setting bitrate to " << h264_bitrate << std::endl;
-    if(device_ctrl.set_bitrate(h264_bitrate*1000)) {
-    	std::cout << "current bitrate = " << h264_bitrate << std::endl;
+    if(h264_bitrate != cur_bitrate) {
+       std::cout << "setting bitrate to " << h264_bitrate << std::endl;
+       if(device_ctrl.set_bitrate(h264_bitrate*1000)) {
+          std::cout << "current bitrate = " << h264_bitrate << std::endl;
+       }
     }
 }
 
